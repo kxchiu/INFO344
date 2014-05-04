@@ -1,0 +1,87 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace WebService2
+{
+    public class Trie
+    {
+        public TrieNode root = new TrieNode();
+
+        public TrieNode AddTitle(string word)
+        {
+            char[] charArray = word.ToLower().ToCharArray();
+            TrieNode node = root;
+
+            foreach (char character in charArray)
+            {
+                node = AddTitle(character, node);
+            }
+            node.word.Add(word);
+            return root;
+        }
+
+        private TrieNode AddTitle(char character, TrieNode node)
+        {
+            if (node.Contains(character))
+            {
+                return node.GetChild(character);
+            }
+            else
+            {
+                node.children.Add(character, new TrieNode());
+                node = node.children[character];
+                return node;
+            }
+        }
+
+        public List<string> GetTenResults(string word)
+        {
+            List<string> results = new List<string>();
+            results = GetTenResults(word, root, results);
+            return results;
+        }
+
+        private List<string> GetTenResults(string word, TrieNode root, List<string> results)
+        {
+
+
+            if (results.Count >= 10)
+            {
+                return results;
+            }
+
+            if (root.word.Count > 0 && word.Length == 0){
+                foreach (string w in root.word)
+                {
+                    results.Add(w);
+                }
+            }
+
+            try
+            {
+                if (word.Length > 0) {
+                        GetTenResults(word.Substring(1), root.children[word[0]], results);
+                }
+
+                List<char> allKeys = root.children.Keys.ToList();
+                allKeys.Sort();
+                if (allKeys.Count > 0 && allKeys[0] == ' ')
+                {
+                    allKeys.RemoveAt(0);
+                    allKeys.Add(' ');
+                }
+                foreach (char character in allKeys)
+                {
+                    if (word.Length == 0 || character > word[0])
+                    {
+                        GetTenResults(word, root.children[character], results);
+                    }
+                }
+            }
+            catch (KeyNotFoundException) { }
+            return results;
+        }
+    }
+}
