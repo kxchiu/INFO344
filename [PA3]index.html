@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Crawl the Web</title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css" />
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <script>
+        $(document).ready(function () {
+            setInterval(function () {
+                $.ajax({
+                    url: "Admin.asmx/getDashboard",
+                    type: "POST",
+                    data: '{word: "poop"}',
+                    contentType: "application/json",
+                    //dataType: "application/json",
+                    error: function () { alert('An error has occured with Refresh'); },
+                    success: jParse
+                });
+                function jParse(json) {
+                    $(".display").html(''); 
+                    $(".display").append("<table id='table_stats'><tr id='stats_name'><td>CPU</td><td>RAM</td><td>Recent Crawled</td><td>Total Crawled</td><td>URLs Left</td><td>Index</td><td>Error URL</td></tr><tr id='stats_num'>");
+                    console.log(json);
+                    for (var i = 0; i < 7; i++) {
+                        $(".display").append("<td>" + json.d[i] + "</td>");
+                    }
+                    $(".display").append("</tr></table>");
+                }
+
+            }, 3000);
+
+            $("#control_start").click(function () {
+                $.ajax({
+                    url: "Admin.asmx/start",
+                    type: "POST",
+                    data: '{web: "' + $("#startCrawl").val() + '"}',
+
+                    contentType: "application/json",
+                    error: function () { alert('An error has occured with Start'); },
+                });
+            });
+
+            $("#control_stop").click(function () {
+                $.ajax({
+                    url: "Admin.asmx/stop",
+                    type: "POST",
+                    data: '{word: "poop"}',
+                    contentType: "application/json",
+                    error: function () { alert('An error has occured with Stop'); },
+                });
+            });
+
+            $("#control_clear").click(function () {
+                $.ajax({
+                    url: "Admin.asmx/clear",
+                    type: "POST",
+                    data: '{word: "poop"}',
+                    contentType: "application/json",
+                    error: function () { alert('An error has occured with Clear'); },
+                });
+            });
+
+            $("#submitT").click(function () {
+                $.ajax({
+                    type: "GET",
+                    url: "Admin.asmx/find",
+                    //data:
+                    dataType: "application/json",
+                    error: function () { alert('An error has occured with Search'); },
+                    success: jParseTitle
+                });
+            });
+
+            function jParseTitle(json) {
+                $(".searchURL").html('');
+                
+                $(".searchURL").append("<table><tr id='researchResult><td>Title</td></tr><tr><td>" + json[i].Title + "</td></tr>");
+                
+                $(".searchURL").append("</table>");
+            }
+        });
+    </script>
+    <style>
+        td {
+            width: 100px;
+            height: 40px;
+            border: 1px solid black;
+            margin-bottom: 15px;
+            text-align: center;
+            font: baskerville, 'palatino linotype', 'times new roman', serif;
+            font-size: 16pt;
+        }
+
+        #stats_name {
+            background-color: rgb(112,146,190);
+        }
+    </style>
+</head>
+<body>
+    <div id="results">
+        <p>Please only crawl "www.cnn.com" or "sportsillustrated.cnn.com"!</p>
+        <input type="text" id="startCrawl" />
+        <button type="button" class="btn btn-success" id="control_start">Start</button>
+        <button type="button" class="btn btn-warning" id="control_stop">Stop</button>
+        <button type="button" class="btn btn-danger" id="control_clear">Clear</button>
+    </div>
+    <div class="display">
+
+    </div>
+
+    <div id="searchTitle">
+        <input type="text" id="search" />
+        <input type="submit" id="submitT" />
+    </div>
+    <div class="searchURL">
+
+    </div>
+</body>
+</html>
