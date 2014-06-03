@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="admin.css" />
+</head>
+<body>
+    <div id="utilities">
+        <ul>
+            <li class="home"><a class="live" href="/" title="Return to the home page">Search <em>Sorcery</em></a></li>
+            <li class="xml"><a href="#" title="Get my feed via Feedburner"><img src="http://www.pmloans.com/wp/wp-content/themes/pm_loans_2010/images/wave.png" alt="XML feed" /></a></li>
+            <li><a href="http://cwc8.cloudapp.net" title="Home">Home</a></li>
+            <li><a href="http://cwc8.cloudapp.net/admin.html" title="Dashboard">Dashboard</a></li>
+        </ul>
+    </div>
+
+    <div id="type-wrap">
+        <h1 id="type"><em>C<span>h<span>e</span></span></em> <i>n<span>-<span>w</span></span></i><strong>e<span>i<span>C<span>h<span>i<span>u<span>.</span></span></span></span></span></span></strong></h1>
+        <p><em>Search &#38; Sorcery</em> <strong>&#8212; not an imagination, but perhaps a <a href="#">reality</a>.</strong></p>
+    </div>
+
+    <h1>Dashboard</h1>
+    <div id="deck">
+        <h2>Search Title</h2>
+        <div id="search">
+            <input id="input" placeholder="Search for titles using URLs..." />
+            <button id="searchB">Search a Title</button><br />
+            <span></span>
+        </div>
+
+        <div id="worker">
+            <h2>Worker</h2>
+            <div id="workers">
+                <div class="worker"></div>
+            </div>
+        </div>
+
+        <div id="query">
+            <h2>Suggestion Information</h2>
+            <div id="queries">
+                <div id="total">
+                    <h4>Total Title</h4>
+                    <span id="numAdd">####</span>
+                </div>
+                <div id="last">
+                    <h4>Last Title</h4>
+                    <span id="lastAdd">####</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="info">
+            <h2>Crawling Information</h2>
+            <div id="infos">
+                <button id="res">Reset Database</button>
+                <div id="indexed">
+                    <h4>Urls Indexed</h4>
+                    <span id="urlindexed">####</span>
+                </div>
+                <div id="crawled">
+                    <h4>Urls Crawled</h4>
+                    <span id="urlcrawled">####</span>
+                </div>
+                <div id="queued">
+                    <h4>Urls Queued</h4>
+                    <span id="urlqueued">####</span>
+                </div>
+
+                <div id="crawledurls">
+                    <h3>Last 10 Crawled URLs</h3>
+                    <div></div>
+                </div>
+                <div id="errors">
+                    <h3>List of Errors</h3>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script>
+        $("#search button").click(function () {
+            sendCommand("getTitle", { url: $("#search input").val() }, function (data) {
+                $("#search span").html("Title: " + data);
+            });
+        });
+
+        $("#infos > button").click(function () {
+            if (confirm("By resetting the database, all worker roles will be stopped. Are you sure you want to continue?")) {
+                sendCommand("resetDatabase");
+            }
+        });
+
+        setInterval(function () {
+            $.ajax({
+                url: "WebService1.asmx/totalAdd",
+                type: "POST",
+                data: '{ word: "blah"}',
+                contentType: "application/json",
+                success: totalParse
+            });
+            $.ajax({
+                url: "WebService1.asmx/lastTitle",
+                type: "POST",
+                data: '{ word: "blah"}',
+                contentType: "application/json",
+                success: lastParse
+            })
+            function totalParse(json) {
+                $("#numAdd").html(json);
+            }
+            function lastParse(json) {
+                $("#lastAdd").html(json);
+            }
+        }, 5000);
+
+        function getUpdates() {
+            sendCommand("getUpdates", {}, function (data) {
+                addWorkersInfo(data.workers);
+
+                $("#urlindexed").html(data.info.numUrlsIndexed);
+                $("#urlcrawled").html(data.info.numUrlsCrawled);
+                $("#urlqueued").html(data.info.numUrlsQueued);
+                $("#crawledurls>div").html(data.info.urlsCrawled.join("<br>"));
+                $("#errors>div").html(data.info.crawlErrors.join("<br>"));
+            }, function () {
+                setTimeout(getUpdates, 500);
+            });
+        }
+
+        function addWorkersInfo(workers) {
+            $("#workers").html("");
+            for (var workerId in workers) {
+                var worker = workers[workerId];
+                workerEl = $(
+                    '<div workerid="' + worker.roleInstanceId + '" class="worker">' +
+                    '<div>ID: ' + worker.roleInstanceId +
+                    ' | State: ' + worker.state +
+                    ' | CPU: <span class="cpu">' + Math.round(worker.cpuUsage, 2) +
+                    '%</span> | Memory: <span class="memory">' + Math.round(worker.memoryUsage, 2) +
+                    '%</span></div>' +
+                    '<button workerid="' + worker.roleInstanceId + '" class="startworker">Start</button>' +
+                    '<button workerid="' + worker.roleInstanceId + '" class="stopworker">Stop</button>' +
+                    '</div>'
+                );
+                $("#workers").append(workerEl);
+
+                if (worker.state == "Stopped" || worker.state == "Reset") {
+                    workerEl.find(".startworker").removeAttr("disabled");
+                    workerEl.find(".stopworker").attr("disabled", "disabled");
+                    $("#infos > button").removeAttr("disabled");
+                } else if (worker.state == "Resetting") {
+                    workerEl.find(".startworker").attr("disabled", "disabled");
+                    workerEl.find(".stopworker").attr("disabled", "disabled");
+                    $("#infos > button").attr("disabled", "disabled");
+                } else {
+                    workerEl.find(".startworker").attr("disabled", "disabled");
+                    workerEl.find(".stopworker").removeAttr("disabled");
+                    $("#infos > button").removeAttr("disabled");
+                }
+
+                workerEl.find(".startworker").click(function () {
+                    sendCommand("startCrawl", { workerId: $(this).attr("workerid") });
+                });
+                workerEl.find(".stopworker").click(function () {
+                    sendCommand("stopCrawl", { workerId: $(this).attr("workerid") });
+                });
+            }
+        }
+
+        function sendCommand(command, parameter, success, complete) {
+            $.ajax({
+                url: "WebService1.asmx/" + command,
+                data: JSON.stringify(parameter),
+                type: "POST",
+                contentType: "application/json",
+                success: function (data) {
+                    if (typeof (success) != "undefined") {
+                        success(data.d);
+                    }
+                },
+                complete: complete
+            });
+        }
+        getUpdates();
+    </script>
+</body>
+</html>
