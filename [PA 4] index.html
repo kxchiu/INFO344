@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Search Sorcery</title>
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css" />
+    <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <script type="text/javascript">
+        function jpParse(jsonp) {      
+            $(".display").html('');
+            console.log(jsonp);
+            if (jsonp.length != 0) {
+                $(".display").append("<div id='player_name'>" + jsonp[0].PlayerName + "</div>");
+                $(".display").append("<table id='player_stats'><tr id='stats_name'><td>GP</td><td>FGP</td><td>TPP</td><td>FTP</td><td>PPG</td></tr><tr id='stats_num'><td>" + jsonp[0].GP + "</td><td>" + jsonp[0].FGP + "</td><td>" + jsonp[0].TPP + "</td><td>" + jsonp[0].FTP + "</td><td>" + jsonp[0].PPG + "</td></tr>");
+                $(".display").append("</table>");
+            }
+        }
+        $(document).ready(function () {
+            $("#input").keyup(function () {
+                var val = $(this).val().trim().toLowerCase();
+                $.ajax({
+                    crossDomain: true,
+                    contentType: "application/jsonp; charset=utf-8",
+                    url: "http://54.186.244.225/PA1/search.php",
+                    data: "callback=jpParse&input=" + val,
+                    dataType: "jsonp",
+                    success: jpParse
+                });
+            });
+            $("#input").autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: "WebService1.asmx/Search",
+                        type: "POST",
+                        data: '{word: "' + request.term.replace(/"/g, "\\$&") + '"}',
+                        contentType: "application/json",
+                        success: function (data) {
+                            response(data.d);
+                        }
+                    });
+                }
+            })
+            $("#search").click(function () {
+                var val = $("#input").val().trim();
+                $.ajax({
+                    url: "WebService1.asmx/searchTitle",
+                    type: "POST",
+                    data: '{word: "' + val + '"}',
+                    contentType: "application/json",
+                    success: titleParse
+                });
+
+                function titleParse(json) {
+                    $(".searchDisplay").html('');
+                    console.log(json);
+                    $(".searchDisplay").append("<h3>Search Result</h3><table>");
+                    for (var i = 0; i < json.d.length; i++) {
+                        $(".searchDisplay").append("<tr><td><a href='" + json.d[i][1] + "'>" + json.d[i][0] + "</a></td></tr>");
+                    }
+                    $(".searchDisplay").append("</table>");
+                }
+            });
+        });
+    </script>
+    <style>
+        #aside {
+            width: 48.125em;
+            margin: 0.063em auto 0;
+            border-top: 0.063em solid rgb(153,217,234);
+            border-bottom: 0.188em solid rgb(153,217,234);
+            display: block;
+            clear: both;
+        }
+        .searchDisplay {
+            padding: 15px;
+            width: auto;
+            margin: 0;
+            max-width: none;
+        }
+        .searchDisplay h3 {
+            font-size: 1.25em;
+            line-height: 1.25em;
+            font-weight: 500;
+            font-variant: small-caps;
+            letter-spacing: 0.25em;
+            font-family: baskerville,'palatino linotype','times new roman',serif;
+            color: rgb(153,217,234);
+            margin-bottom: 0.5em;
+        }
+        .searchDisplay td {
+            font-size: 1.125em;
+            height: 1.5em;
+        }
+        .searchDisplay td a, .searchDisplay td a:visited {
+            color: rgb(0,162,232);
+        }
+        .searchDisplay td a:hover {
+            color: rgb(153,217,234);
+            transition: color 0.6s;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="utilities">
+        <ul>
+            <li class="home"><a class="live" href="/" title="Return to the home page">Search <em>Sorcery</em></a></li>
+            <li class="xml"><a href="#" title="Get my feed via Feedburner"><img src="http://www.pmloans.com/wp/wp-content/themes/pm_loans_2010/images/wave.png" alt="XML feed" /></a></li>
+            <li><a href="http://cwc8.cloudapp.net" title="Home">Home</a></li>
+            <li><a href="http://cwc8.cloudapp.net/admin.html" title="Dashboard">Dashboard</a></li>
+        </ul>
+    </div>
+
+    <div id="type-wrap">
+        <h1 id="type"><em>C<span>h<span>e</span></span></em> <i>n<span>-<span>w</span></span></i><strong>e<span>i<span>C<span>h<span>i<span>u<span>.</span></span></span></span></span></span></strong></h1>
+        <p><em>Search &#38; Sorcery</em> <strong>&#8212; not an imagination, but perhaps a <a href="#">reality</a>.</strong></p>
+    </div>
+
+    <div id="deck">
+        <h2>Search for the Magic</h2>
+        <div class="main">
+                <input type="text" id="input" placeholder="Search for something...">
+                <button type="submit" name="op" id="search">Search</button>
+        </div>
+
+        <div class="display">
+        </div>
+    </div>
+
+    <div id="aside">
+        <div class="searchDisplay">
+        </div>
+    </div>
+
+</body>
+</html>
